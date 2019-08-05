@@ -16,7 +16,18 @@ object Stream {
     else cons(as.head, apply(as.tail: _*))
 
   val ones: Stream[Int] = Stream.cons(1, ones)
-  def from(n: Int): Stream[Int] = ???
+
+  def constant[A](a: A): Stream[A] =
+    cons(a, constant(a))
+
+  def from(n: Int): Stream[Int] =
+    cons(n, from(n+1))
+
+  def fibs(): Stream[Int] = {
+    def loop(n0: Int, n1: Int): Stream[Int] =
+      cons(n0, loop(n1, n0 + n1))
+    loop(0, 1)
+  }
 
   def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = ???
 }
@@ -70,18 +81,22 @@ trait Stream[+A] {
   }
 
   def forAll(p: A => Boolean): Boolean =
-    foldRight(true)((a, b) => p(a) && b)
+    foldRight(true)((h, t) => p(h) && t)
 
-  def headOption: Option[A] = ???
+  def headOption: Option[A] =
+    foldRight(None: Option[A])((h, _) => Some(h))
 
+  def map[B](f: A => B): Stream[B] =
+    foldRight(empty[B])((h, t) => cons(f(h), t))
 
-  def map[B](f: A => B): Stream[B] = ???
+  def filter(f: A => Boolean): Stream[A] =
+    foldRight(empty[A])((h, t) => if (f(h)) cons(h, t) else t)
 
-  def filter(f: A => Boolean): Stream[A] = ???
+  def append[B >: A](s: => Stream[B]): Stream[B] =
+    foldRight(s)((h, t) => cons(h, t))
 
-  def append[B >: A](b: B): Stream[B] = ???
-
-  def flatMap[B](f: A => Option[B]): Stream[B] = ???
+  def flatMap[B](f: A => Stream[B]): Stream[B] =
+    foldRight(empty[B])((h, t) => f(h) append t)
 
   // 5.7 map, filter, append, flatmap using foldRight. Part of the exercise is
   // writing your own function signatures.
@@ -91,6 +106,5 @@ trait Stream[+A] {
 
 
 object StreamTest extends App {
-  val s = Stream(1,2,3,4,5)
-  println(s.takeWhile(_ <= 3).toList)
+  println(Stream.fibs.take(8).toList)
 }
