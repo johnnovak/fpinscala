@@ -55,6 +55,7 @@ trait Monad[M[_]] extends Functor[M] {
 
 case class Reader[R, A](run: R => A)
 
+/*
 object Monad {
   val genMonad = new Monad[Gen] {
     def unit[A](a: => A): Gen[A] = Gen.unit(a)
@@ -90,4 +91,4 @@ object Reader {
     override def flatMap[A,B](st: Reader[R,A])(f: A => Reader[R,B]): Reader[R,B] = ???
   }
 }
-
+*/
