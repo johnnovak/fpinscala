@@ -10,6 +10,7 @@ import language.higherKinds
 
 
 trait Functor[F[_]] {
+
   def map[A,B](fa: F[A])(f: A => B): F[B]
 
   def distribute[A,B](fab: F[(A, B)]): (F[A], F[B]) =
@@ -22,27 +23,35 @@ trait Functor[F[_]] {
 }
 
 object Functor {
+
   val listFunctor = new Functor[List] {
     def map[A,B](as: List[A])(f: A => B): List[B] = as map f
   }
 }
 
 trait Monad[M[_]] extends Functor[M] {
+
   def unit[A](a: => A): M[A]
+
   def flatMap[A,B](ma: M[A])(f: A => M[B]): M[B]
 
   def map[A,B](ma: M[A])(f: A => B): M[B] =
     flatMap(ma)(a => unit(f(a)))
+
   def map2[A,B,C](ma: M[A], mb: M[B])(f: (A, B) => C): M[C] =
     flatMap(ma)(a => map(mb)(b => f(a, b)))
 
-  def sequence[A](lma: List[M[A]]): M[List[A]] = ???
+  def sequence[A](lma: List[M[A]]): M[List[A]] =
+    lma.foldRight(unit(List.empty[A]))((ma, mz) => map2(ma, mz)(_ :: _))
 
-  def traverse[A,B](la: List[A])(f: A => M[B]): M[List[B]] = ???
+  def traverse[A,B](la: List[A])(f: A => M[B]): M[List[B]] =
+    sequence(la.map(f))
 
-  def replicateM[A](n: Int, ma: M[A]): M[List[A]] = ???
+  def replicateM[A](n: Int, ma: M[A]): M[List[A]] =
+    sequence(List.fill(n)(ma))
 
-  def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] = ???
+  def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] =
+    a => flatMap(f(a))(b => g(b))
 
   // Implement in terms of `compose`:
   def _flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = ???
